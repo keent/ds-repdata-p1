@@ -1,18 +1,88 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Reproducible Research: Peer Assessment Part 1"
+author: "Gran Ville Lintao"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
+
+It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the “quantified self” movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
+
+
+
+## Introduction
+
+We set the options and include libraries in this part of code:
+```{r setoptions,echo=TRUE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+```
+
 
 
 ## Loading and preprocessing the data
+
+1. Loading the data can be done via the following code:
+
+```{r}
+path2csv <- "./activity.csv"
+mydf <- read.csv(path2csv)
+```
+
+2. This code converts the data frame to a data frame table structure for easier processing:
+
+```{r}
+mytbldf <- tbl_df(mydf)
+```
 
 
 
 ## What is mean total number of steps taken per day?
 
+<!--
+```{r}
 
+#mean_by_day <- summarize(by_day, #meansteps=mean(steps))
+```
+-->
+
+The total number of steps taken per day can be calculated by using the verbs from dplyr - group_by and summarize
+
+```{r}
+by_day <- group_by(mytbldf, date)
+sum_by_day <- summarize(by_day, sumsteps=sum(steps))
+
+```
+
+And then visualized in a histogram by using ggplot2
+
+code:
+```{r}
+
+# convert the date to a vector of integers so it can be displayed nicely in the plot
+days <- as.numeric(sum_by_day$date)
+sum_by_day <- cbind(sum_by_day, days)
+
+# display a histogram plot
+qplot(days, data=sum_by_day, weight=sumsteps, geom="histogram", binwidth=1)
+```
+
+The mean of the total number of steps per day is calculated as:
+
+```{r}
+meansteps <- mean(sum_by_day$sumsteps, na.rm=TRUE)
+meansteps
+```
+
+While the median of the total number of steps per day is calculated as:
+
+```{r}
+mediansteps <- median(sum_by_day$sumsteps, na.rm=TRUE)
+mediansteps
+```
 
 ## What is the average daily activity pattern?
 
@@ -23,3 +93,26 @@ output:
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+
+
+You can enable figure captions by `fig_caption: yes` in YAML:
+
+    output:
+      rmarkdown::html_vignette:
+        fig_caption: yes
+
+Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+
+## More Examples
+
+You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(mtcars, 10))
+```
+
+Also a quote using `>`:
+
+> "He who gives up [code] safety for [code] speed deserves neither."
+([via](https://twitter.com/hadleywickham/status/504368538874703872))
