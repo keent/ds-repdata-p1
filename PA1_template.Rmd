@@ -1,19 +1,18 @@
 ---
-title: "Reproducible Research: Peer Assessment Part 1"
+title: "Reproducible Research Peer Assessment Part 1"
 author: "Gran Ville Lintao"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Vignette Title}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+date: "August 16, 2015"
+output: 
+  html_document: 
+    keep_md: yes
 ---
 
-It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the “quantified self” movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
-
-
-
 ## Introduction
+
+It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the "quantified self" movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
+
+This study makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
+
 
 We set the options and include libraries in this part of code:
 ```{r setoptions,echo=TRUE, message=FALSE}
@@ -147,7 +146,7 @@ days2 <- as.numeric(sum_by_day2$date)
 sum_by_day2 <- cbind(sum_by_day2, days2)
 
 # display a histogram plot
-qplot(days2, data=sum_by_day2, weight=sumsteps, geom="histogram", binwidth=1)
+qplot(days2, data=sum_by_day2, weight=sumsteps, geom="histogram", binwidth=1, xlab="Days", ylab="Total Steps Taken")
 
 ```
 
