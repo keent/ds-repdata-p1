@@ -17,8 +17,13 @@ It is now possible to collect a large amount of data about personal movement usi
 
 We set the options and include libraries in this part of code:
 ```{r setoptions,echo=TRUE, message=FALSE}
+library(plyr)
 library(dplyr)
 library(ggplot2)
+
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.path='figure/',
+                      warning=FALSE, message=FALSE)
+#library(plyr)
 ```
 
 
@@ -42,14 +47,9 @@ mytbldf <- tbl_df(mydf)
 
 ## What is mean total number of steps taken per day?
 
-<!--
-```{r}
 
-#mean_by_day <- summarize(by_day, #meansteps=mean(steps))
-```
--->
 
-The total number of steps taken per day can be calculated by using the verbs from dplyr - group_by and summarize
+1. The total number of steps taken per day can be calculated by using the verbs from dplyr - group_by and summarize
 
 ```{r}
 by_day <- group_by(mytbldf, date)
@@ -61,7 +61,6 @@ And then visualized in a histogram by using ggplot2
 
 code:
 ```{r}
-
 # convert the date to a vector of integers so it can be displayed nicely in the plot
 days <- as.numeric(sum_by_day$date)
 sum_by_day <- cbind(sum_by_day, days)
@@ -70,6 +69,7 @@ sum_by_day <- cbind(sum_by_day, days)
 qplot(days, data=sum_by_day, weight=sumsteps, geom="histogram", binwidth=1)
 ```
 
+2. 
 The mean of the total number of steps per day is calculated as:
 
 ```{r}
@@ -86,33 +86,123 @@ mediansteps
 
 ## What is the average daily activity pattern?
 
+1. The average daily activity can be shown by creating a time series plot of the 5-minute interval in X axis vs the average number of steps across all days in Y axis. 
+
+```{r}
+by_intrv <- group_by(mytbldf, interval)
+mean_by_intrv <- summarize(by_intrv, avesteps=mean(steps, na.rm=TRUE))
+
+plot <- ggplot(mean_by_intrv, aes(interval, avesteps)) + geom_line() 
+plot + xlab("Interval") + ylab("Average Steps across all days")
+```
+
+2. The 5-minute interval averaged across all days that contains the maximum number of steps can be calculated as follows:
+
+```{r}
+maxavestep <- max(mean_by_intrv$avesteps)
+rowanswer <- subset(mean_by_intrv, avesteps == maxavestep)
+```
+
+The value of the said interval is:
+```{r echo=FALSE}
+rowanswer$interval
+```
 
 
 ## Imputing missing values
+1. The total number of rows with NA steps in data is:
 
+```{r}
+rowsWithNaSteps <- subset(mytbldf, is.na(steps))
+totalRowsWithNas <- nrow(rowsWithNaSteps)
+totalRowsWithNas
+```
+
+2. There are `r totalRowsWithNas` rows with NA values. An acceptable strategy for filling this empty rows is by using the mean for each interval calculated in the previous section.
+
+
+3. In this part we're going to fill the NAs with the mean steps of each 5-minute interval averaged across all days:
+
+```{r}
+
+newmytbldf <- mytbldf
+
+for (i in 1:nrow(newmytbldf)) {
+  
+  if (is.na(newmytbldf[i,]$steps)) {
+    answer <- subset(mean_by_intrv, interval == newmytbldf[i,]$interval)
+    newmytbldf[i,]$steps <- answer$avesteps
+  }
+}
+```
+
+4. Then we're going to compare the average values and its histogram with the first part - which contains missing data
+
+```{r}
+by_day2 <- group_by(newmytbldf, date)
+sum_by_day2 <- summarize(by_day2, sumsteps=sum(steps))
+
+# convert the date to a vector of integers so it can be displayed nicely in the plot
+days2 <- as.numeric(sum_by_day2$date)
+sum_by_day2 <- cbind(sum_by_day2, days2)
+
+# display a histogram plot
+qplot(days2, data=sum_by_day2, weight=sumsteps, geom="histogram", binwidth=1)
+
+```
+
+The mean total number of steps per day is:
+
+```{r}
+meansteps2 <- mean(sum_by_day2$sumsteps)
+meansteps2
+```
+
+While the median of the total number of steps per day is calculated as:
+
+```{r}
+mediansteps2 <- median(sum_by_day2$sumsteps)
+mediansteps2
+```
+
+Based on visually comparing the previous plot and the current one we can see that there's not much difference except for some spaces that are filled out with higher values. The mean is the same and the median for the latter is just higher by one point.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
+1. In this part of the code we're going to create a new factor variable that identifies whether a row falls on a weekday or a weekend:
 
+```{r}
+cdays <- weekdays(as.Date(newmytbldf$date))
+newmytbldf$cdays <- cdays
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+newmytbldf$daytype <- ""
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
+for (i in 1:nrow(newmytbldf)) {
+  if (newmytbldf[i,]$cdays == "Sunday" ||
+      newmytbldf[i,]$cdays == "Saturday")
+  {
+    newmytbldf[i,]$daytype <- "weekend"
+  }
+  else
+  {
+    newmytbldf[i,]$daytype <- "weekday"
+  }
+}
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+newmytbldf$daytype <- as.factor(newmytbldf$daytype)
 ```
 
-Also a quote using `>`:
+And then we're going to create a time series plot to investigate whether there's a difference in activity patterns between weekdays and weekends.
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+As we can see below the maximum number of steps is taken on weekdays but during weekends there seems to be a larger group of larger numbers of steps taken compared to weekdays.
+
+```{r}
+dataSum <- ddply(newmytbldf, ~interval * daytype, summarise, meanSteps=mean(steps))
+
+qplot(interval, meanSteps, data=dataSum,
+      facets=.~daytype, geom="line",
+      ylab="Average Steps taken",
+      xlab="Interval")
+```
+
